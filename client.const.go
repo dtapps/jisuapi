@@ -1,7 +1,7 @@
 package jisuapi
 
 const (
-	apiUrl = "https://api.jisuapi.com"
+	apiUrl = "https://api.jisuapi.com/"
 )
 
 const (

@@ -2,20 +2,19 @@ package jisuapi
 
 import (
 	"context"
-	"go.dtapp.net/gojson"
 	"go.dtapp.net/gorequest"
 	"net/http"
 )
 
 type ShoujiQueryResponse struct {
-	Status int64  `json:"status"` // 状态码
+	Status string `json:"status"` // 状态码
 	Msg    string `json:"msg"`
 	Result struct {
-		Province string `json:"province"` // 省
-		City     string `json:"city"`     // 市
-		Company  string `json:"company"`  // 运营商
-		Cardtype string `json:"cardtype"` // 卡类型
-	} `json:"result"`
+		Province string `json:"province,omitempty"` // 省
+		City     string `json:"city,omitempty"`     // 市
+		Company  string `json:"company,omitempty"`  // 运营商
+		Cardtype string `json:"cardtype,omitempty"` // 卡类型
+	} `json:"result,omitempty"`
 }
 
 type ShoujiQueryResult struct {
@@ -31,16 +30,17 @@ func newShoujiQueryResult(result ShoujiQueryResponse, body []byte, http goreques
 // ShoujiQuery 手机号码归属地
 // https://www.jisuapi.com/api/shouji/
 func (c *Client) ShoujiQuery(ctx context.Context, shouji string, appkey string, notMustParams ...gorequest.Params) (*ShoujiQueryResult, error) {
+
+	// OpenTelemetry链路追踪
+	ctx = c.TraceStartSpan(ctx, "shouji/query")
+	defer c.TraceEndSpan()
+
 	// 参数
 	params := gorequest.NewParamsWith(notMustParams...)
 	params.Set("shouji", shouji) // 手机号
+
 	// 请求
-	request, err := c.request(ctx, apiUrl+"/shouji/query?appkey="+appkey, params, http.MethodGet)
-	if err != nil {
-		return newShoujiQueryResult(ShoujiQueryResponse{}, request.ResponseBody, request), err
-	}
-	// 定义
 	var response ShoujiQueryResponse
-	err = gojson.Unmarshal(request.ResponseBody, &response)
+	request, err := c.request(ctx, "shouji/query?appkey="+appkey, params, http.MethodGet, &response)
 	return newShoujiQueryResult(response, request.ResponseBody, request), err
 }
